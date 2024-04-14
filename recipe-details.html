@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">Simple Recipe Website</a>
+            </div>
+        </nav>
+    </header>
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Recipe image -->
+                <img src="{{.PhotoURL}}" alt="Recipe Image" class="img-fluid mb-3">
+                <!-- Recipe instructions -->
+                <h2>{{.Title}}</h2>
+                <h3>Instructions</h3>
+                <p>{{.Instructions}}</p>
+            </div>
+            <div class="col-md-4">
+                <!-- Ingredients sidebar -->
+                <h2>Ingredients</h2>
+                <ul>
+                    {{range .Ingredients}}
+                        <li>{{.}}</li>
+                    {{end}}
+                </ul>
+                <!-- Other Recipes section -->
+                <h2>Other Recipes</h2>
+                <ul>
+                    <!-- Add other recipe links here -->
+                    <li><a href="#">Recipe 1</a></li>
+                    <li><a href="#">Recipe 2</a></li>
+                    <li><a href="#">Recipe 3</a></li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <span class="text-muted">&copy; 2024 Simple Recipe Website</span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -7,13 +7,14 @@ import (
 	"strings"
 )
 
+// Recipe represents the JSON data structure
 type Recipe struct {
 	ID                 string   `json:"id"`
 	Title              string   `json:"title"`
 	Ingredients        []string `json:"ingredients"`
 	Instructions       string   `json:"instructions"`
-	PhotoURL           string   `json:"photo_url"`
-	MealType           string   `json:"meal_type"`
+	PhotoURL           string   `json:"image"`
+	MealType           string   `json:"dishTypes"`
 	DietaryRestriction []string `json:"dietary_restriction"`
 }
 

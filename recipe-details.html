@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/recipe-styles.css">
 </head>
 <body>
     <header>
         <nav class="navbar navbar-dark bg-dark">
             <div class="container">
-                <a class="navbar-brand" href="#">Simple Recipe Website</a>
+                <a class="navbar-brand" href="/">Simple Recipe Website</a>
             </div>
         </nav>
     </header>
@@ -22,6 +22,10 @@
                 <img src="{{.PhotoURL}}" alt="Recipe Image" class="img-fluid mb-3">
                 <!-- Recipe instructions -->
                 <h2>{{.Title}}</h2>
+                <p><strong>Meal Type:</strong> {{.MealType}}</p>
+                {{if ne .DietaryRestriction "None"}}
+                    <p><strong>Dietary Restrictions:</strong> {{.DietaryRestriction}}</p>
+                {{end}}
                 <h3>Instructions</h3>
                 <p>{{.Instructions}}</p>
             </div>
@@ -46,6 +50,7 @@
     </main>
     <footer class="footer">
         <div class="container">
+            <a href="#header" class="text-muted">Back to Top</a>
             <span class="text-muted">&copy; 2024 Simple Recipe Website</span>
         </div>
     </footer>

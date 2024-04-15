@@ -3,59 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Recipe Website</title>
+    <title>Cloud Cuisine</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <header>
         <nav class="navbar navbar-dark bg-dark">
             <div class="container">
-                <a class="navbar-brand" href="#">Simple Recipe Website</a>
+                <a class="navbar-brand" href="/">Cloud Cuisine</a>
             </div>
         </nav>
     </header>
     <main class="container mt-4">
-        <section class="selection-section">
-            <div class="filters mb-4">
-                <h2>Filters</h2>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="mealType">Meal Type:</label>
-                            <select class="form-control" id="mealType">
-                                <option value="" selected>Any</option>
-                                <option value="breakfast">Breakfast</option>
-                                <option value="lunch">Lunch</option>
-                                <option value="dinner">Dinner</option>
-                                <option value="snack">Snack</option>
-                            </select>
-                        </div>
+        <section class="search-section">
+            <h2>Search Recipes</h2>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="mealType">Meal Type:</label>
+                        <select class="form-control" id="mealType">
+                            <option value="" selected>Any</option>
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snack</option>
+                        </select>
                     </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="dietaryRestrictions">Dietary Restrictions:</label>
-                            <select class="form-control" id="dietaryRestrictions">
-                                <option value="" selected>Any</option>
-                                <option value="vegetarian">Vegetarian</option>
-                                <option value="vegan">Vegan</option>
-                                <option value="gluten-free">Gluten-free</option>
-                            </select>
-                        </div>
-                    </div>
-                    
                 </div>
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="form-group">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="ingredients" placeholder="Enter ingredients">
-                                <div class="input-group-append">
-                                    <button class="btn btn-primary" type="button" id="searchButton">Search</button>
-                                </div>
-                            </div>
-                        </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="dietaryRestrictions">Dietary Restrictions:</label>
+                        <select class="form-control" id="dietaryRestrictions">
+                            <option value="" selected>Any</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                            <option value="gluten-free">Gluten-free</option>
+                        </select>
                     </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="ingredients">Ingredients:</label>
+                        <input type="text" class="form-control" id="ingredients" placeholder="Enter ingredients">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <button class="btn btn-primary" id="searchButton">Search</button>
                 </div>
             </div>
         </section>
@@ -63,59 +58,91 @@
         <section class="recipes">
             <h2>Recipes</h2>
             <ul class="list-group" id="recipeList">
-                <li class="list-group-item">
-                    <a href="/recipe-details?id=1">Recipe 1</a>
-                </li>
-                <li class="list-group-item">
-                    <a href="/recipe-details?id=2">Recipe 2</a>
-                </li>
-                <!-- Add more recipes with clickable links as needed -->
+                <!-- Recipes will be dynamically added here -->
             </ul>
         </section>
     </main>
-    <footer class="footer">
-        <div class="container">
-            <span class="text-muted">&copy; 2024 Simple Recipe Website</span>
-        </div>
-    </footer>
 
     <script>
-        // JavaScript code for handling form input
         document.addEventListener("DOMContentLoaded", function() {
-            const searchButton = document.getElementById("searchButton");
-            const ingredientsInput = document.getElementById("ingredients");
+            // Function to fetch and display matching recipes
+            function fetchAndDisplayRecipes() {
+                // Get selected values from dropdowns
+                const mealType = document.getElementById("mealType").value === "Any" ? "None" : document.getElementById("mealType").value;
+                const dietaryRestriction = document.getElementById("dietaryRestrictions").value === "Any" ? "None" : document.getElementById("dietaryRestrictions").value;
+                const ingredients = document.getElementById("ingredients").value;
 
-            // Function to handle search
-            function handleSearch() {
-                const ingredients = ingredientsInput.value.trim();
-                if (ingredients === "") {
-                    alert("Please enter some ingredients to search for recipes.");
-                    return;
-                }
+                // Construct the URL with selected values
+                const url = `http://localhost:8081/recipe?meal_type=${mealType}&dietary_restriction=${dietaryRestriction}&ingredients=${ingredients}`;
 
-                // Clear the input field after search
-                ingredientsInput.value = "";
+
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Extract the recipe object if it's wrapped in an array
+                        const recipes = Array.isArray(data) ? data[0] : data;
+
+                        // Clear existing recipe list
+                        const recipeList = document.getElementById("recipeList");
+                        recipeList.innerHTML = "";
+
+                        // Check if there are no recipes found
+                        if (!recipes || Object.keys(recipes).length === 0) {
+                            const errorMessage = document.createElement("p");
+                            errorMessage.textContent = "No recipes found matching the search criteria.";
+                            recipeList.appendChild(errorMessage);
+                        } else {
+                            // Iterate over the matching recipes and create list items
+                            data.forEach(recipe => {
+                                const listItem = document.createElement("li");
+                                listItem.className = "list-group-item";
+                                
+                                // Create a link element
+                                const link = document.createElement("a");
+                                link.textContent = recipe.title; // Use lowercase 'title' property
+                                // Set the href attribute to the recipe details page URL with the recipe ID as a query parameter
+                                link.href = `/recipe-details?id=${recipe.id}`;
+                                // Set the target attribute to "_blank" to open the link in a new tab/window
+                                link.target = "_blank";
+                                
+                                // Append the link to the list item
+                                listItem.appendChild(link);
+                                
+                                // Append the list item to the recipe list
+                                recipeList.appendChild(listItem);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching recipes:", error);
+                        // Print out the response text (JSON data) that caused the error
+                        console.error("Response text:", error.response ? error.response.text() : "No response text available");
+                        // Display error message on the webpage
+                        const recipeList = document.getElementById("recipeList");
+                        recipeList.innerHTML = "<p>Error fetching recipes. Please try again later.</p>";
+                    });
+
+
+                // Clear the ingredients input field
+                document.getElementById("ingredients").value = "";
             }
 
-            // Event listener for the search button click
-            searchButton.addEventListener("click", handleSearch);
+            // Call fetchAndDisplayRecipes function when the page loads
+            fetchAndDisplayRecipes();
 
-            // Event listener for "Enter" key press in the input field
-            ingredientsInput.addEventListener("keypress", function(event) {
-                if (event.key === "Enter") {
-                    handleSearch();
-                }
-            });
+            // Event listener for dropdown changes
+            document.getElementById("mealType").addEventListener("change", fetchAndDisplayRecipes);
+            document.getElementById("dietaryRestrictions").addEventListener("change", fetchAndDisplayRecipes);
 
-            // Add default recipe when the page loads
-            const defaultRecipe = document.createElement("li");
-            defaultRecipe.className = "list-group-item default-recipe";
-            const defaultLink = document.createElement("a");
-            defaultLink.href = "#"; // Add your default recipe link here
-            defaultLink.textContent = "Default Recipe";
-            defaultRecipe.appendChild(defaultLink);
-            recipeList.appendChild(defaultRecipe);
+            // Event listener for search button click
+            document.getElementById("searchButton").addEventListener("click", fetchAndDisplayRecipes);
         });
     </script>
+    
 </body>
 </html>

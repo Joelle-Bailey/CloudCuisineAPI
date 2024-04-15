@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Finder</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script>
+        // Function to handle adding ingredients to a list
+        let ingredients = [];
+
+        function addIngredient() {
+            const ingredientInput = document.getElementById('ingredient-input');
+            const ingredient = ingredientInput.value.trim();
+            if (ingredient && !ingredients.includes(ingredient)) {
+                ingredients.push(ingredient);
+                updateIngredientList();
+            }
+            ingredientInput.value = '';  // Clear the input after adding
+        }
+
+        function updateIngredientList() {
+            const ingredientList = document.getElementById('ingredient-list');
+            ingredientList.innerHTML = ingredients.map((ingredient, index) => 
+                `<div class="ingredient-item">
+                    ${ingredient} 
+                    <button onclick="removeIngredient(${index})">Remove</button>
+                </div>`
+            ).join('');
+        }
+
+        function removeIngredient(index) {
+            ingredients.splice(index, 1);
+            updateIngredientList();
+        }
+
+        function saveIngredients() {
+            document.getElementById('ingredients').value = ingredients.join(',');
+        }
+
+        window.onload = function() {
+            const savedIngredients = sessionStorage.getItem('ingredients');
+            if (savedIngredients) {
+                ingredients = savedIngredients.split(',');
+                updateIngredientList();
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Recipe Finder</h1>
+    <div>
+        <input type="text" id="ingredient-input" placeholder="Add ingredients">
+        <button onclick="addIngredient()">Add Ingredient</button>
+    </div>
+    <div id="ingredient-list">
+        <!-- Ingredients list will be populated here -->
+    </div>
+    <form action="/results" method="post" onsubmit="saveIngredients()">
+        <input type="hidden" id="ingredients" name="ingredients">
+        Dietary Restrictions: <input type="text" name="dietary_restrictions"><br>
+        Meal Type: <select name="meal_type">
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+        </select><br>
+        <input type="submit" value="Find Recipes">
+    </form>
+    <a href="/recipebook">View Recipe Book</a>
+</body>
+</html>

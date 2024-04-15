@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Favorite Recipes</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+            const listElement = document.getElementById('favorites-list');
+            listElement.innerHTML = ''; // Clear the list first
+            favorites.forEach(function(recipe) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${recipe.title} (ID: ${recipe.id})`;
+                listElement.appendChild(listItem);
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Your Favorite Recipes</h1>
+    <ul id="favorites-list">
+        <!-- Favorites will be dynamically inserted here -->
+    </ul>
+    <a href="/">Back to Search</a>
+</body>
+</html>
+

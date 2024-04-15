@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Results</title>
+    <script>
+        // Retrieve the current list of favorite recipes from localStorage
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+        // This function will be called when a user clicks the favorite/unfavorite button
+        function toggleFavorite(recipeId) {
+            const index = favorites.indexOf(recipeId);
+            if (index > -1) {
+                favorites.splice(index, 1); // Remove from favorites if it's already there
+            } else {
+                favorites.push(recipeId); // Add to favorites if it's not there
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites)); // Save the updated favorites list
+            updateFavoritesDisplay();
+        }
+
+        // This function updates the display of the favorite buttons
+        function updateFavoritesDisplay() {
+            document.querySelectorAll('.favorite-btn').forEach(button => {
+                const recipeId = button.getAttribute('data-recipe-id');
+                if (favorites.includes(parseInt(recipeId))) {
+                    button.textContent = 'Unfavorite';
+                } else {
+                    button.textContent = 'Favorite';
+                }
+            });
+
+            // Optionally sort the recipes to move favorites to the top
+            // This would require each recipe to be wrapped in a container with an id or class for selection
+        }
+
+        // Call updateFavoritesDisplay on page load to reflect the current favorites
+        window.addEventListener('load', updateFavoritesDisplay);
+    </script>
+</head>
+<body>
+    <h1>Recipes You Can Make</h1>
+    {% if recipes %}
+        <div id="recipe-list">
+            {% for recipe in recipes %}
+            <div class="recipe-item" data-recipe-id="{{ recipe['id'] }}">
+                {{ recipe['title'] }} (ID: {{ recipe['id'] }})
+                <button 
+                    class="favorite-btn" 
+                    data-recipe-id="{{ recipe['id'] }}" 
+                    onclick="toggleFavorite({{ recipe['id'] }})">
+                    Favorite
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No recipes found. Try different ingredients or settings.</p>
+    {% endif %}
+    <a href="/">Search Again</a>
+    
+</body>
+</html>
+

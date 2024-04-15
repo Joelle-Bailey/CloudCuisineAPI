@@ -1,0 +1,6 @@
+@app.route('/results')
+def results():
+    # Assume 'recipes' is a list of recipe dictionaries obtained from the Spoonacular API
+    recipes = get_recipes()  # Replace with your actual method to get recipes
+    recipes_json = json.dumps(recipes)  # Convert the recipes to a JSON string
+    return render_template('results.html', recipes_json=recipes_json)

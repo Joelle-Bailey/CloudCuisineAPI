@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -47,11 +48,13 @@ var recipes = map[string]Recipe{
 }
 
 func main() {
+	mux := http.NewServeMux()
 	// Define a handler function for the test recipe endpoint
 	http.HandleFunc("/recipe", recipeHandler)
+	mux.Handle("/recipe", http.HandlerFunc(recipeHandler))
+	mux.Handle("/details", http.HandlerFunc(detailHandler))
 
-	// Start the web server
-	http.ListenAndServe(":8081", nil)
+	log.Fatal(http.ListenAndServe("localhost:8081", mux))
 }
 
 func recipeHandler(w http.ResponseWriter, r *http.Request) {
@@ -156,4 +159,30 @@ func containsIngredients(recipe Recipe, ingredients string) bool {
 		}
 	}
 	return true
+}
+
+func detailHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse the recipe ID from the query parameters
+	id := r.URL.Query().Get("id")
+
+	// Fetch the recipe with the corresponding ID from your data source
+	recipe, found := recipes[id]
+	if !found {
+		http.Error(w, "Recipe not found", http.StatusNotFound)
+		return
+	}
+
+	// Marshal the recipe into JSON format
+	recipeJSON, err := json.Marshal(recipe)
+	if err != nil {
+		http.Error(w, "Failed to marshal recipe JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the Content-Type header to application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write the JSON response
+	w.Write(recipeJSON)
+
 }

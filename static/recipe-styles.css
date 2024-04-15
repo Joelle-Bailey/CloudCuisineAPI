@@ -1,7 +1,6 @@
-/* styles.css */
 /* Ensure that the body has enough padding to make room for the fixed sidebar */
 body {
-    padding-right: 16px; /* Adjust this value as needed */
+    padding-left: 16px; /* Adjust this value as needed */
 }
 
 /* Ensure that the footer is pushed down to avoid overlapping with the fixed sidebar */
@@ -17,7 +16,7 @@ body {
     overflow-y: auto; /* Enable vertical scrolling */
     padding-top: 60px; /* Adjust this value to provide space for the navbar */
     background-color: #f8f9fa; /* Optional: Set background color for the sidebar */
-    border-right: 1px solid #dee2e6; /* Optional: Add border to the right for visual separation */
+    border-left: 1px solid #dee2e6; /* Optional: Add border to the left for visual separation */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth */
     z-index: 1; /* Ensure the sidebar is above other content */
 }
@@ -32,6 +31,6 @@ body {
 /* Reset the margin for the main content when the sidebar is fixed */
 @media (min-width: 992px) {
     .col-md-8 {
-        margin-left: 33%; /* Adjust this value to match the width of the sidebar */
+        margin-right: 33%; /* Adjust this value to match the width of the sidebar */
     }
 }

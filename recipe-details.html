@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}}</title>
+    <title style="text-align: right;">Cloud Cuisine</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/recipe-styles.css">
+    <link rel="stylesheet" href="/static/recipe-styles.css">
 </head>
 <body>
     <header>
@@ -23,8 +23,13 @@
                 <!-- Recipe instructions -->
                 <h2>{{.Title}}</h2>
                 <p><strong>Meal Type:</strong> {{.MealType}}</p>
-                {{if ne .DietaryRestriction "None"}}
-                    <p><strong>Dietary Restrictions:</strong> {{.DietaryRestriction}}</p>
+                {{if gt (len .DietaryRestriction) 0}}
+                    <p><strong>Dietary Restrictions:</strong></p>
+                    <ul>
+                        {{range .DietaryRestriction}}
+                            <li>{{.}}</li>
+                        {{end}}
+                    </ul>
                 {{end}}
                 <h3>Instructions</h3>
                 <p>{{.Instructions}}</p>
@@ -51,7 +56,7 @@
     <footer class="footer">
         <div class="container">
             <a href="#header" class="text-muted">Back to Top</a>
-            <span class="text-muted">&copy; 2024 Simple Recipe Website</span>
+            <span class="text-muted">&copy; 2024 Cloud Cuisine</span>
         </div>
     </footer>
 </body>

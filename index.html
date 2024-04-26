@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Cuisine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">Cloud Cuisine</a>
+                <img src="https://media0.giphy.com/media/kcILZOcvgMzXgr4TJx/source.gif" alt="Cloud Animation" style="width: 100px; height: auto;" loop>                
+            </div>
+        </nav>
+    </header>
+    <main class="container mt-4">
+        <section class="search-section">
+            <h2>Search Recipes</h2>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="mealType">Meal Type:</label>
+                        <select class="form-control" id="mealType">
+                            <option value="" selected>Any</option>
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snack</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="dietaryRestrictions">Dietary Restrictions:</label>
+                        <select class="form-control" id="dietaryRestrictions">
+                            <option value="" selected>Any</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                            <option value="gluten-free">Gluten-free</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="ingredients">Ingredients:</label>
+                        <input type="text" class="form-control" id="ingredients" placeholder="Enter ingredients">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <button class="btn btn-primary" id="searchButton">Search</button>
+                </div>
+            </div>
+        </section>
+        <br>
+        <section class="recipes">
+            <h3>My Recipes</h3>
+            <ul class="list-group" id="recipeList">
+                <!-- Recipes will be dynamically added here -->
+            </ul>
+        </section>
+        <br>
+        <!-- Additional list from Spoonacular API -->
+        <section class="additional-recipes">
+            <h3>All Recipes</h3>
+            <ul class="list-group" id="additionalRecipeList">
+                <!-- Additional recipes will be dynamically added here -->
+            </ul>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Function to fetch and display matching recipes
+            function fetchAndDisplayRecipes() {
+                // Get selected values from dropdowns
+                const mealType = document.getElementById("mealType").value === "Any" ? "None" : document.getElementById("mealType").value;
+                const dietaryRestriction = document.getElementById("dietaryRestrictions").value === "Any" ? "None" : document.getElementById("dietaryRestrictions").value;
+                const ingredients = document.getElementById("ingredients").value;
+
+                // Construct the URL with selected values
+                const url = `http://localhost:8081/recipe?meal_type=${mealType}&dietary_restriction=${dietaryRestriction}&ingredients=${ingredients}`;
+
+
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Extract the recipe object if it's wrapped in an array
+                        const recipes = Array.isArray(data) ? data[0] : data;
+
+                        // Clear existing recipe list
+                        const recipeList = document.getElementById("recipeList");
+                        recipeList.innerHTML = "";
+
+                        // Check if there are no recipes found
+                        if (!recipes || Object.keys(recipes).length === 0) {
+                            const errorMessage = document.createElement("p");
+                            errorMessage.textContent = "No recipes found matching the search criteria.";
+                            recipeList.appendChild(errorMessage);
+                        } else {
+                            // Iterate over the matching recipes and create list items
+                            data.forEach(recipe => {
+                                const listItem = document.createElement("li");
+                                listItem.className = "list-group-item";
+                                
+                                // Create a link element
+                                const link = document.createElement("a");
+                                link.textContent = recipe.title; // Use lowercase 'title' property
+                                // Set the href attribute to the recipe details page URL with the recipe ID as a query parameter
+                                link.href = `/recipe-details?id=${recipe.id}&call=favorites`;
+                                // Set the target attribute to "_blank" to open the link in a new tab/window
+                                link.target = "_blank";
+                                
+                                // Append the link to the list item
+                                listItem.appendChild(link);
+                                
+                                // Append the list item to the recipe list
+                                recipeList.appendChild(listItem);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching recipes:", error);
+                        // Print out the response text (JSON data) that caused the error
+                        console.error("Response text:", error.response ? error.response.text() : "No response text available");
+                        // Display error message on the webpage
+                        const recipeList = document.getElementById("recipeList");
+                        recipeList.innerHTML = "<p>Error fetching recipes. Please try again later.</p>";
+                    });
+
+
+                // Clear the ingredients input field
+                document.getElementById("ingredients").value = "";
+            }
+
+            // Call fetchAndDisplayRecipes function when the page loads
+            fetchAndDisplayRecipes();
+
+            // Function to fetch and display matching recipes from Spoonacular API
+            function fetchAdditionalRecipes() {
+                // Get selected values from dropdowns
+                const mealType = document.getElementById("mealType").value === "Any" ? "None" : document.getElementById("mealType").value;
+                const dietaryRestriction = document.getElementById("dietaryRestrictions").value === "Any" ? "None" : document.getElementById("dietaryRestrictions").value;
+                const ingredients = document.getElementById("ingredients").value;
+
+                // Construct the URL with selected values
+                const url = `/api/?type=${mealType}&diet=${dietaryRestriction}&includeIngredients=${ingredients}`;
+                //const url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=2cb224078c8346dc98e48581d25d0788&type=${mealType}&diet=${dietaryRestriction}&includeIngredients=${ingredients}`;
+                //const apiKey = process.env.SPOONACULAR_API_KEY;
+
+                fetch(url, {
+                    headers: {
+                        //"x-api-key": apiKey // Replace "YOUR_API_KEY_HERE" with your actual API key
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Clear existing additional recipe list
+                        const additionalRecipeList = document.getElementById("additionalRecipeList");
+                        additionalRecipeList.innerHTML = "";
+
+                        // Check if there are no recipes found
+                        if (!data || !data.results || data.results.length === 0) {
+                            const errorMessage = document.createElement("p");
+                            errorMessage.textContent = "No additional recipes found.";
+                            additionalRecipeList.appendChild(errorMessage);
+                        } else {
+                            // Iterate over the additional recipes and create list items
+                            data.results.forEach(recipe => {
+                                const listItem = document.createElement("li");
+                                listItem.className = "list-group-item";
+                                // Create a link element
+                                const link = document.createElement("a");
+                                link.textContent = recipe.title; // Use lowercase 'title' property
+                                // Set the href attribute to the recipe details page URL with the recipe ID as a query parameter
+                                link.href = `/recipe-details?id=${recipe.id}&call=api`;
+                                // Set the target attribute to "_blank" to open the link in a new tab/window
+                                link.target = "_blank";
+                                
+                                // Append the link to the list item
+                                listItem.appendChild(link);
+                                
+                                // Append the list item to the recipe list
+                                additionalRecipeList.appendChild(listItem);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching additional recipes:", error);
+                        // Display error message on the webpage
+                        const additionalRecipeList = document.getElementById("additionalRecipeList");
+                        additionalRecipeList.innerHTML = "<p>Error fetching additional recipes. Please try again later.</p>";
+                    });
+            }
+
+            // Call fetchAdditionalRecipes function when the page loads
+            fetchAdditionalRecipes();
+
+            // Event listener for dropdown changes
+            document.getElementById("mealType").addEventListener("change", function() {
+                fetchAndDisplayRecipes();
+                fetchAdditionalRecipes();
+            });
+
+            document.getElementById("dietaryRestrictions").addEventListener("change", function() {
+                fetchAndDisplayRecipes();
+                fetchAdditionalRecipes();
+            });
+
+            // Event listener for search button click
+            document.getElementById("searchButton").addEventListener("click", function() {
+                fetchAndDisplayRecipes();
+                fetchAdditionalRecipes();
+            });
+
+            document.getElementById("ingredients").addEventListener("keyup", function(event) {
+                // Check if the Enter key is pressed (key code 13)
+                if (event.keyCode === 13) {
+                    // Trigger the fetchAndDisplayRecipes function
+                    fetchAndDisplayRecipes();
+                    fetchAdditionalRecipes();
+                }
+            });
+
+        });
+    </script>
+    
+</body>
+</html>

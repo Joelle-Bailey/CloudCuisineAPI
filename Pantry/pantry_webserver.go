@@ -1,15 +1,11 @@
-// Modified from lab 8 - docker hosting
-
 package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -32,14 +28,9 @@ func checkError(err error) {
 	}
 }
 
-type Post struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	Item      string             `bson:"item"`
-	Price     dollars            `bson:"price"`
-	Tags      []string           `bson:"tags"`
-	Comments  uint64             `bson:"comments"`
-	CreatedAt time.Time          `bson:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at"`
+type Ingredient struct {
+	Name   string  `bson:"name" json:"name"`
+	Amount float64 `bson:"amount" json:"amount"`
 }
 
 type database struct {
@@ -85,7 +76,7 @@ func newDatabase() *database {
 		if time.Now().Second()%2 == 0 {
 			return nil // Success
 		} else {
-			return errors.New("operation failed")
+			return fmt.Errorf("operation failed")
 		}
 	}
 
@@ -94,19 +85,18 @@ func newDatabase() *database {
 	)
 	checkError(err)
 
-	// Connect to mongo
+	// Connect to MongoDB
 	ctx, _ := context.WithTimeout(context.Background(), 100*time.Second)
 	err = client.Connect(ctx)
 
 	err = retry(ctx, 4, time.Second, operation)
-
 	if err != nil {
 		fmt.Printf("Operation failed after retries: %v\n", err)
 	} else {
 		fmt.Println("Operation succeeded")
 	}
 
-	// select collection from database
+	// Select collection from database
 	col := client.Database("inventory").Collection("items")
 
 	return &database{
@@ -118,146 +108,133 @@ func newDatabase() *database {
 
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
 
-func (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) { // adapter function
+func (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f(w, r)
 }
 
 func (db database) list(w http.ResponseWriter, r *http.Request) {
-
 	filter := bson.M{"item": bson.M{"$exists": true}}
 
-	// find all documents
-	cursor, err := db.data.Find(db.connect, filter)
+	// Find all documents
+	ctx, cancel := context.WithTimeout(db.connect, 10*time.Second)
+	defer cancel()
+
+	cursor, err := db.data.Find(ctx, filter)
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer cursor.Close(db.connect)
-
-	var posts []Post
-	if err := cursor.All(db.connect, &posts); err != nil {
-		log.Fatal(err)
-	}
-
-	for _, p := range posts {
-		fmt.Fprintf(w, "%s: %f\n", p.Item, p.Price)
-	}
-}
-
-func (db database) price(w http.ResponseWriter, r *http.Request) {
-	item := r.URL.Query().Get("item")
-
-	// find one document
-	var p Post
-	err := db.data.FindOne(context.Background(), bson.M{"item": item}).Decode(&p)
-	if err == nil {
-		if err == mongo.ErrNoDocuments {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "item not found\n")
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error finding item: %v\n", err)
+		http.Error(w, "Error querying database", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(w, "price of %s: %d\n", item, p.Price)
+	defer cursor.Close(ctx)
+
+	var ingredients []Ingredient
+	if err := cursor.All(ctx, &ingredients); err != nil {
+		http.Error(w, "Error retrieving data", http.StatusInternalServerError)
+		return
+	}
+
+	for _, ing := range ingredients {
+		fmt.Fprintf(w, "%s: %.2f\n", ing.Name, ing.Amount)
+	}
 }
 
 func (db database) create(w http.ResponseWriter, r *http.Request) {
 
-	item := r.URL.Query().Get("item")
-	price := r.URL.Query().Get("price")
+	name := r.URL.Query().Get("name")
+	amountStr := r.URL.Query().Get("amount")
 
-	price_update, ok := strconv.ParseFloat(price, 64)
-
-	if ok != nil {
-		w.WriteHeader(http.StatusNotFound) //404 page
-		fmt.Fprintf(w, "could not convert price: %q\n", item)
+	amount, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "could not convert amount: %q\n", amountStr)
 		return
 	}
 
-	filter := bson.M{"item": item}
+	filter := bson.M{"name": name}
 	found := db.data.FindOne(context.Background(), filter)
 
 	if found.Err() == nil {
 		if found.Err() != mongo.ErrNoDocuments {
-			// Item not found
-			// Respond with 404 Not Found
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "item alreay in inventory: %q\n", item)
+			// Ingredient already exists
+			w.WriteHeader(http.StatusConflict)
+			fmt.Fprintf(w, "ingredient already in inventory: %q\n", name)
 			return
 		}
 		// Other error occurred
 		// Respond with 500 Internal Server Error
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error checking item: %v\n", found.Err())
+		fmt.Fprintf(w, "error checking ingredient: %v\n", found.Err())
 		return
 	}
 
-	res, err := db.data.InsertOne(db.connect, &Post{
-		ID:        primitive.NewObjectID(),
-		Item:      item,
-		Price:     dollars(price_update),
-		CreatedAt: time.Now(),
+	res, err := db.data.InsertOne(db.connect, &Ingredient{
+		Name:   name,
+		Amount: amount,
 	})
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error creating item: %s\n", err.Error())
+		fmt.Fprintf(w, "error creating ingredient: %s\n", err.Error())
 		return
 	}
 
 	fmt.Printf("inserted id: %s\n", res.InsertedID.(primitive.ObjectID).Hex())
 
-	fmt.Fprintf(w, "Created item: %s at $%.2f price\n", item, price_update)
+	fmt.Fprintf(w, "Created ingredient: %s with amount %.2f\n", name, amount)
 
 }
 
 func (db database) update(w http.ResponseWriter, r *http.Request) {
-	item := r.URL.Query().Get("item")
-	price := r.URL.Query().Get("price")
+	name := r.URL.Query().Get("name")
+	amountStr := r.URL.Query().Get("amount")
 
-	// Create a filter to find the item document
-	filter := bson.M{"item": item}
+	amount, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "could not convert amount: %q\n", amountStr)
+		return
+	}
 
-	// Create an update to set the price field
-	update := bson.M{"$set": bson.M{"price": price}}
+	// Create a filter to find the ingredient document
+	filter := bson.M{"name": name}
+
+	// Create an update to set the amount field
+	update := bson.M{"$set": bson.M{"amount": amount}}
 
 	// Perform the update operation
-	_, err := db.data.UpdateOne(context.Background(), filter, update)
+	_, err = db.data.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error updating item: %v\n", err)
+		fmt.Fprintf(w, "error updating ingredient: %v\n", err)
 		return
 	}
 
 	// Send a success response
-	fmt.Fprintf(w, "price of item %q updated to %q\n", item, price)
+	fmt.Fprintf(w, "amount of ingredient %q updated to %.2f\n", name, amount)
 }
 
 func (db database) remove(w http.ResponseWriter, r *http.Request) {
-	item := r.URL.Query().Get("item")
+	name := r.URL.Query().Get("name")
 
-	// Create a filter to find the item document
-	filter := bson.M{"item": item}
+	// Create a filter to find the ingredient document
+	filter := bson.M{"name": name}
 
 	// Perform the delete operation
 	result, err := db.data.DeleteOne(context.Background(), filter)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error deleting item: %v\n", err)
+		fmt.Fprintf(w, "error deleting ingredient: %v\n", err)
 		return
 	}
 
-	// Check if the item was found and deleted
+	// Check if the ingredient was found and deleted
 	if result.DeletedCount == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "no such item: %q\n", item)
+		fmt.Fprintf(w, "no such ingredient: %q\n", name)
 		return
 	}
 
 	// Send a success response
-	fmt.Fprintf(w, "Deleted item: %s ", item)
-
+	fmt.Fprintf(w, "Deleted ingredient: %s\n", name)
 }
 
 func main() {
@@ -266,11 +243,10 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/list", http.HandlerFunc(db.list))
-	mux.Handle("/price", http.HandlerFunc(db.price))
 	mux.Handle("/create", http.HandlerFunc(db.create))
 	mux.Handle("/update", http.HandlerFunc(db.update))
 	mux.Handle("/remove", http.HandlerFunc(db.remove))
-	log.Fatal(http.ListenAndServe("localhost:8002", mux))
+	log.Fatal(http.ListenAndServe("localhost:8003", mux))
 
-	//defer db.client.Disconnect(db.connect)
+	//defer db.client.Disconnect(db.connect
 }

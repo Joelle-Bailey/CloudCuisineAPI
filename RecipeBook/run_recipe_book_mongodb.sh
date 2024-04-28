@@ -1,4 +1,5 @@
 #!/bin/bash
+docker rm -f recipe-book-mongodb-instance
 
 # Build MongoDB Docker image
 docker build -t recipe-book-mongodb .

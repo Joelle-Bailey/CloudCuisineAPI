@@ -1,21 +1,19 @@
-// Modified from lab 8 - docker hosting
-
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
-
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 const (
@@ -32,14 +30,14 @@ func checkError(err error) {
 	}
 }
 
-type Post struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	Item      string             `bson:"item"`
-	Price     dollars            `bson:"price"`
-	Tags      []string           `bson:"tags"`
-	Comments  uint64             `bson:"comments"`
-	CreatedAt time.Time          `bson:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at"`
+type Recipe struct {
+	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title              string             `bson:"title" json:"title"`
+	Ingredients        []string           `bson:"ingredients" json:"ingredients"`
+	Instructions       string             `bson:"instructions" json:"instructions"`
+	PhotoURL           string             `bson:"photoURL" json:"image"`
+	MealType           string             `bson:"mealType" json:"dishTypes"`
+	DietaryRestriction []string           `bson:"dietaryRestriction" json:"dietary_restriction"`
 }
 
 type database struct {
@@ -97,6 +95,14 @@ func newDatabase() *database {
 	// Connect to mongo
 	ctx, _ := context.WithTimeout(context.Background(), 100*time.Second)
 	err = client.Connect(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	err = retry(ctx, 4, time.Second, operation)
 
@@ -107,7 +113,7 @@ func newDatabase() *database {
 	}
 
 	// select collection from database
-	col := client.Database("inventory").Collection("items")
+	col := client.Database("inventory").Collection("recipes")
 
 	return &database{
 		data:    col,
@@ -123,154 +129,65 @@ func (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) { // adap
 }
 
 func (db database) list(w http.ResponseWriter, r *http.Request) {
-
-	filter := bson.M{"item": bson.M{"$exists": true}}
-
-	// find all documents
-	cursor, err := db.data.Find(db.connect, filter)
+	cursor, err := db.data.Find(db.connect, bson.M{})
 	if err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "error fetching recipes: %v\n", err)
+		return
 	}
 	defer cursor.Close(db.connect)
 
-	var posts []Post
-	if err := cursor.All(db.connect, &posts); err != nil {
-		log.Fatal(err)
-	}
-
-	for _, p := range posts {
-		fmt.Fprintf(w, "%s: %f\n", p.Item, p.Price)
-	}
-}
-
-func (db database) price(w http.ResponseWriter, r *http.Request) {
-	item := r.URL.Query().Get("item")
-
-	// find one document
-	var p Post
-	err := db.data.FindOne(context.Background(), bson.M{"item": item}).Decode(&p)
-	if err == nil {
-		if err == mongo.ErrNoDocuments {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "item not found\n")
-			return
-		}
+	var recipes []Recipe
+	if err := cursor.All(db.connect, &recipes); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error finding item: %v\n", err)
+		fmt.Fprintf(w, "error decoding recipes: %v\n", err)
 		return
 	}
-	fmt.Fprintf(w, "price of %s: %d\n", item, p.Price)
+
+	// Marshal the recipes slice into JSON
+	responseData, err := json.Marshal(recipes)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "error marshaling response: %v\n", err)
+		return
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write JSON response
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseData)
 }
 
 func (db database) create(w http.ResponseWriter, r *http.Request) {
-
-	item := r.URL.Query().Get("item")
-	price := r.URL.Query().Get("price")
-
-	price_update, ok := strconv.ParseFloat(price, 64)
-
-	if ok != nil {
-		w.WriteHeader(http.StatusNotFound) //404 page
-		fmt.Fprintf(w, "could not convert price: %q\n", item)
+	var recipe Recipe
+	err := json.NewDecoder(r.Body).Decode(&recipe)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "error decoding request body: %v\n", err)
 		return
 	}
 
-	filter := bson.M{"item": item}
-	found := db.data.FindOne(context.Background(), filter)
-
-	if found.Err() == nil {
-		if found.Err() != mongo.ErrNoDocuments {
-			// Item not found
-			// Respond with 404 Not Found
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "item alreay in inventory: %q\n", item)
-			return
-		}
-		// Other error occurred
-		// Respond with 500 Internal Server Error
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error checking item: %v\n", found.Err())
-		return
-	}
-
-	res, err := db.data.InsertOne(db.connect, &Post{
-		ID:        primitive.NewObjectID(),
-		Item:      item,
-		Price:     dollars(price_update),
-		CreatedAt: time.Now(),
-	})
-
+	res, err := db.data.InsertOne(db.connect, recipe)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error creating item: %s\n", err.Error())
+		fmt.Fprintf(w, "error creating recipe: %s\n", err.Error())
 		return
 	}
 
 	fmt.Printf("inserted id: %s\n", res.InsertedID.(primitive.ObjectID).Hex())
 
-	fmt.Fprintf(w, "Created item: %s at $%.2f price\n", item, price_update)
-
-}
-
-func (db database) update(w http.ResponseWriter, r *http.Request) {
-	item := r.URL.Query().Get("item")
-	price := r.URL.Query().Get("price")
-
-	// Create a filter to find the item document
-	filter := bson.M{"item": item}
-
-	// Create an update to set the price field
-	update := bson.M{"$set": bson.M{"price": price}}
-
-	// Perform the update operation
-	_, err := db.data.UpdateOne(context.Background(), filter, update)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error updating item: %v\n", err)
-		return
-	}
-
-	// Send a success response
-	fmt.Fprintf(w, "price of item %q updated to %q\n", item, price)
-}
-
-func (db database) remove(w http.ResponseWriter, r *http.Request) {
-	item := r.URL.Query().Get("item")
-
-	// Create a filter to find the item document
-	filter := bson.M{"item": item}
-
-	// Perform the delete operation
-	result, err := db.data.DeleteOne(context.Background(), filter)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "error deleting item: %v\n", err)
-		return
-	}
-
-	// Check if the item was found and deleted
-	if result.DeletedCount == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "no such item: %q\n", item)
-		return
-	}
-
-	// Send a success response
-	fmt.Fprintf(w, "Deleted item: %s ", item)
-
+	json.NewEncoder(w).Encode(recipe)
 }
 
 func main() {
-
 	db := newDatabase()
 
 	mux := http.NewServeMux()
 	mux.Handle("/list", http.HandlerFunc(db.list))
-	mux.Handle("/price", http.HandlerFunc(db.price))
 	mux.Handle("/create", http.HandlerFunc(db.create))
-	mux.Handle("/update", http.HandlerFunc(db.update))
-	mux.Handle("/remove", http.HandlerFunc(db.remove))
-	log.Fatal(http.ListenAndServe("localhost:8002", mux))
+	log.Fatal(http.ListenAndServe("localhost:8003", mux))
 
-	//defer db.client.Disconnect(db.connect)
+	defer db.client.Disconnect(db.connect)
 }

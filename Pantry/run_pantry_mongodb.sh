@@ -1,4 +1,5 @@
 #!/bin/bash
+docker rm -f pantry-mongodb-instance
 
 # Build MongoDB Docker image
 docker build -t pantry-mongodb .

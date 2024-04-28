@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!-- Created By CodingNepal -->
+<html lang="en" dir="ltr">
+   <head>
+      <meta charset="utf-8">
+      <title>Transparent Registration Form HTML CSS</title>
+      <link rel="stylesheet" href="/static/style.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+   </head>
+   <body>
+      <div class="bg-img">
+         <div class="content">
+            <header>Registration Form</header>
+            <form action="/registerSubmit" method="POST">
+               <div class="field">
+                  <span class="fa fa-user"></span>
+                  <input id="usernameInput" name="username"type="text" required placeholder="Username">
+               </div>
+               <div class="field space">
+                  <span class="fa fa-lock"></span>
+                  <input id="passwordInput" type="password" class="pass-key" required placeholder="Password">
+                  <span class="show">SHOW</span>
+               </div>
+               <div class="field space">
+                  <span class="fa fa-lock"></span>
+                  <input id="confirmPasswordInput" name="password" type="password" class="pass-key" required placeholder="Confirm Password">
+                  <span class="show">SHOW</span>
+               </div>
+               <div class="field">
+                  <input type="submit" value="REGISTER">
+               </div>
+               <div class="signin">
+                  Already have an account? <a href="/signIn">Sign in</a>
+               </div>
+            </form>
+            
+         </div>
+      </div>
+      <script>
+         const registrationForm = document.getElementById('registrationForm');
+         registrationForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Perform form validation (e.g., password match) here
+            
+            // Redirect to login page after successful registration
+            window.location.href = '/signIn';
+         });
+         
+         const pass_fields = document.querySelectorAll('.pass-key');
+         const showBtns = document.querySelectorAll('.show');
+         showBtns.forEach((btn, index) => {
+            btn.addEventListener('click', function(){
+               if(pass_fields[index].type === "password"){
+                  pass_fields[index].type = "text";
+                  btn.textContent = "HIDE";
+                  btn.style.color = "#3498db";
+               }else{
+                  pass_fields[index].type = "password";
+                  btn.textContent = "SHOW";
+                  btn.style.color = "#222";
+               }
+            });
+         });
+      </script>
+   </body>
+</html>

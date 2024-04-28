@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Book</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">Cloud Cuisine</a>
+                <!-- Dropdown menu for other pages -->
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        More
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="/">Home</a>
+                        <a class="dropdown-item" href="/recipe-book">Recipe Book</a>
+                        <a class="dropdown-item" href="/pantry">Pantry</a>
+                    </div>
+                </div>
+                <!-- End of dropdown menu -->
+            </div>
+        </nav>
+    </header>
+    <main class="container mt-4">
+        <h1>Recipe Book</h1>
+        <div class="row">
+            <!-- Recipe 1 -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="https://via.placeholder.com/150" class="card-img-top" alt="Recipe 1">
+                    <div class="card-body">
+                        <h5 class="card-title">Recipe 1</h5>
+                        <p class="card-text">Description of Recipe 1.</p>
+                        <a href="#" class="btn btn-primary">View Recipe</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Recipe 2 -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="https://via.placeholder.com/150" class="card-img-top" alt="Recipe 2">
+                    <div class="card-body">
+                        <h5 class="card-title">Recipe 2</h5>
+                        <p class="card-text">Description of Recipe 2.</p>
+                        <a href="#" class="btn btn-primary">View Recipe</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Add more recipes as needed -->
+        </div>
+    </main>
+    <!-- Bootstrap JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function addRecipe() {
+            // Generate the HTML for a new recipe card
+            var recipeCard = `
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <img src="https://via.placeholder.com/150" class="card-img-top" alt="Recipe Image">
+                        <div class="card-body">
+                            <h5 class="card-title">New Recipe</h5>
+                            <p class="card-text">Description of the new recipe.</p>
+                            <a href="/" class="btn btn-primary">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Append the new recipe card to the recipe container
+            document.getElementById('recipeContainer').innerHTML += recipeCard;
+        }
+    </script>
+</body>
+</html>

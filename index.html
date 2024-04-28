@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Cuisine</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
     <header>
@@ -12,6 +13,17 @@
             <div class="container">
                 <a class="navbar-brand" href="/">Cloud Cuisine</a>
                 <img src="https://media0.giphy.com/media/kcILZOcvgMzXgr4TJx/source.gif" alt="Cloud Animation" style="width: 100px; height: auto;" loop>                
+                <!-- Dropdown menu for other pages -->
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        More
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="/recipe-book">Recipe Book</a>
+                        <a class="dropdown-item" href="/pantry">Pantry</a>
+                    </div>
+                </div>
+                <!-- End of dropdown menu -->
             </div>
         </nav>
     </header>
@@ -118,7 +130,16 @@
                                 link.href = `/recipe-details?id=${recipe.id}&call=favorites`;
                                 // Set the target attribute to "_blank" to open the link in a new tab/window
                                 link.target = "_blank";
+
+                                // Create image element
+                                const image = document.createElement("img");
+                                image.src = recipe.image; // Assuming there's a 'photoUrl' property in each recipe object
+                                image.alt = recipe.title; // Assuming 'title' is used as alt text for accessibility
+                                image.className = "recipe-thumbnail"; // Apply a class for styling, if needed
                                 
+                                // Append the link to the list item
+                                listItem.appendChild(image);
+
                                 // Append the link to the list item
                                 listItem.appendChild(link);
                                 
@@ -153,14 +174,8 @@
 
                 // Construct the URL with selected values
                 const url = `/api/?type=${mealType}&diet=${dietaryRestriction}&includeIngredients=${ingredients}`;
-                //const url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=2cb224078c8346dc98e48581d25d0788&type=${mealType}&diet=${dietaryRestriction}&includeIngredients=${ingredients}`;
-                //const apiKey = process.env.SPOONACULAR_API_KEY;
 
-                fetch(url, {
-                    headers: {
-                        //"x-api-key": apiKey // Replace "YOUR_API_KEY_HERE" with your actual API key
-                    }
-                })
+                fetch(url)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
@@ -190,6 +205,15 @@
                                 // Set the target attribute to "_blank" to open the link in a new tab/window
                                 link.target = "_blank";
                                 
+                                // Create image element
+                                const image = document.createElement("img");
+                                image.src = recipe.image; // Assuming there's a 'photoUrl' property in each recipe object
+                                image.alt = recipe.title; // Assuming 'title' is used as alt text for accessibility
+                                image.className = "recipe-thumbnail"; // Apply a class for styling, if needed
+
+                                // Append the link to the list item
+                                listItem.appendChild(image);
+
                                 // Append the link to the list item
                                 listItem.appendChild(link);
                                 
@@ -237,6 +261,9 @@
 
         });
     </script>
-    
+    <!-- Bootstrap JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

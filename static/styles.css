@@ -50,7 +50,22 @@ footer {
     text-decoration: underline;
 }
 
+.recipe-thumbnail {
+    width: 100px; /* Adjust width as needed */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Ensure image is displayed as a block element */
+    margin-right: 10px; /* Optional: Add spacing between image and text */
+}
 
+/* Style for list items */
+.list-group-item {
+    display: flex; /* Use flexbox */
+    align-items: center; /* Center items vertically */
+}
+
+.list-group-item .recipe-thumbnail {
+    margin-right: 10px; /* Optional: Add spacing between image and text */
+}
 
 
 

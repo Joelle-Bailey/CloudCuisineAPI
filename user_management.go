@@ -33,6 +33,12 @@ func main() {
 	// Define a handler function for the recipe details page
 	http.HandleFunc("/recipe-details/", detailPageHandler)
 
+	// Define a handler function for the recipe book page
+	http.HandleFunc("/recipe-book/", recipeBookHandler)
+
+	// Define a handler function for the pantry page
+	http.HandleFunc("/pantry/", pantryPageHandler)
+
 	// Define a handler function for the recipe details page
 	http.HandleFunc("/api/", externalAPIHandler)
 
@@ -125,6 +131,72 @@ func detailPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func recipeBookHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Make a GET request to fetch the recipe book data
+	resp, err := http.Get("http://localhost:8081/recipe?")
+	if err != nil {
+		http.Error(w, "Failed to fetch recipe book data", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check the status code of the response
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Failed to fetch recipe book data", http.StatusInternalServerError)
+		return
+	}
+
+	// Decode the JSON response into a slice of Recipe structs
+	var recipes []Recipe
+	err = json.NewDecoder(resp.Body).Decode(&recipes)
+	if err != nil {
+		http.Error(w, "Failed to decode recipe book data", http.StatusInternalServerError)
+		return
+	}
+
+	// Render the recipe book page using a template
+	tmpl := template.Must(template.ParseFiles("recipe-book.html"))
+	err = tmpl.Execute(w, recipes)
+	if err != nil {
+		http.Error(w, "Failed to render recipe book page", http.StatusInternalServerError)
+		return
+	}
+}
+
+func pantryPageHandler(w http.ResponseWriter, r *http.Request) {
+	// Make a GET request to fetch the pantry data
+	resp, err := http.Get("http://localhost:8081/pantry")
+	if err != nil {
+		http.Error(w, "Failed to fetch pantry data", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check the status code of the response
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Failed to fetch pantry data", http.StatusInternalServerError)
+		return
+	}
+
+	// Decode the JSON response into a slice of strings
+	var pantry []string
+	err = json.NewDecoder(resp.Body).Decode(&pantry)
+	if err != nil {
+		http.Error(w, "Failed to decode pantry data", http.StatusInternalServerError)
+		return
+	}
+
+	// Render the pantry page using a template
+	tmpl := template.Must(template.ParseFiles("pantry.html"))
+	err = tmpl.Execute(w, pantry)
+	if err != nil {
+		http.Error(w, "Failed to render pantry page", http.StatusInternalServerError)
+		return
+	}
+
+}
+
 func ParseRecipe(data []byte) (Recipe, error) {
 	var recipeData struct {
 		ID                  int      `json:"id"`
@@ -195,7 +267,7 @@ func externalAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Construct the URL for the external API request
-	url := fmt.Sprintf("https://api.spoonacular.com/recipes/complexSearch?apiKey=%s&type=%s&diet=%s&includeIngredients=%s", apiKey, mealType, dietaryRestriction, ingredients)
+	url := fmt.Sprintf("https://api.spoonacular.com/recipes/complexSearch?apiKey=%s&instructionsRequired=true&type=%s&diet=%s&includeIngredients=%s", apiKey, mealType, dietaryRestriction, ingredients)
 
 	// Make the GET request to the external API
 	resp, err := http.Get(url)

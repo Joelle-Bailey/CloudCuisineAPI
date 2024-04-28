@@ -24,7 +24,7 @@ func (d dollars) String() string { return fmt.Sprintf("$%.2f", d) }
 
 type Field struct {
 	Ingredient string    `bson:"ingredient"`
-	Category   string    `bson:"category"`
+	Username   string    `bson:"username"`
 	CreatedAt  time.Time `bson:"created_at"`
 	UpdatedAt  time.Time `bson:"updated_at"`
 }
@@ -66,7 +66,7 @@ func main() {
 	router.HandleFunc("/signInSubmit", db.signInSubmit)
 	router.HandleFunc("/index", db.index)
 	router.HandleFunc("/pantry", db.pantry)
-
+	router.HandleFunc("/logout", db.logout)
 
 	// Serve static files from the "static" directory
 	fs := http.FileServer(http.Dir("static"))
@@ -77,8 +77,20 @@ func main() {
 }
 
 func (db *database) list(w http.ResponseWriter, r *http.Request) {
+    // Get the username from the session
+    session, err := store.Get(r, "session-name")
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    username, ok := session.Values["username"].(string)
+    if !ok {
+        http.Error(w, "username not found in session", http.StatusUnauthorized)
+        return
+    }
+
     ctx := r.Context()
-    cursor, err := db.ingredientCollection.Find(ctx, bson.M{})
+    cursor, err := db.ingredientCollection.Find(ctx, bson.M{"username": username})
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
@@ -226,6 +238,18 @@ func (db *database) pantry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (db *database) create(w http.ResponseWriter, req *http.Request) {
+    // Get the username from the session
+    session, err := store.Get(req, "session-name")
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    username, ok := session.Values["username"].(string)
+    if !ok {
+        http.Error(w, "username not found in session", http.StatusUnauthorized)
+        return
+    }
+
     var body struct {
         Ingredient string `json:"ingredient"`
     }
@@ -235,29 +259,16 @@ func (db *database) create(w http.ResponseWriter, req *http.Request) {
     }
     ingredient := body.Ingredient
 
-    // Check if ingredient already exists
-    var existingIngredient Field
-    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-    defer cancel()
-
-    err := db.ingredientCollection.FindOne(ctx, bson.M{"ingredient": ingredient}).Decode(&existingIngredient)
-    if err == nil {
-        w.WriteHeader(http.StatusBadRequest) // 400
-        fmt.Fprintf(w, "ingredient already exists: %s\n", ingredient)
-        return
-    } else if err != mongo.ErrNoDocuments {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    // Create a new ingredient document
+    // Create a new ingredient document with the username
     newIngredient := Field{
         Ingredient: ingredient,
         CreatedAt:  time.Now(),
         UpdatedAt:  time.Now(),
+        Username:   username, // Add the username to the ingredient
     }
 
     // Insert the new ingredient document into the collection
+    ctx := req.Context()
     _, err = db.ingredientCollection.InsertOne(ctx, newIngredient)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -270,6 +281,7 @@ func (db *database) create(w http.ResponseWriter, req *http.Request) {
         Ingredient string `json:"ingredient"`
     }{Ingredient: ingredient})
 }
+
 
   
 	
@@ -332,4 +344,19 @@ func (db *database) delete(w http.ResponseWriter, req *http.Request) {
 
     w.WriteHeader(http.StatusOK)
     w.Write([]byte("Ingredient deleted successfully"))
+}
+
+func (db *database) logout(w http.ResponseWriter, r *http.Request) {
+    session, err := store.Get(r, "session-name")
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Clear the username from the session
+    delete(session.Values, "username")
+    session.Save(r, w)
+
+    // Redirect to the sign-in page after logging out
+    http.Redirect(w, r, "/index", http.StatusSeeOther)
 }

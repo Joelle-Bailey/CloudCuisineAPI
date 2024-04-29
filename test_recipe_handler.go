@@ -15,7 +15,7 @@ type Recipe struct {
 	Ingredients        []string `json:"ingredients"`
 	Instructions       string   `json:"instructions"`
 	PhotoURL           string   `json:"image"`
-	MealType           string   `json:"dishTypes"`
+	MealType           []string `json:"dishTypes"`
 	DietaryRestriction []string `json:"dietary_restriction"`
 }
 
@@ -89,22 +89,10 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 	// Create a new JSON decoder
 	decoder := json.NewDecoder(resp.Body)
 
-	// Iterate through the JSON tokens
-	for decoder.More() {
-		// Decode the next JSON token
-		var recipe Recipe
-		err := decoder.Decode(&recipe)
-		if err != nil {
-			// If an error occurs, log it and stop decoding
-			fmt.Println("Error decoding JSON:", err)
-			break
-		}
-
-		// Process the decoded recipe
-		fmt.Println("Decoded Recipe:", recipe)
-
-		// Append the decoded recipe to the recipes slice
-		recipes = append(recipes, recipe)
+	// Decode the JSON array into the recipes slice
+	if err := decoder.Decode(&recipes); err != nil {
+		// If an error occurs, log it
+		fmt.Println("Error decoding JSON:", err)
 	}
 
 	// Store recipes in a map
@@ -113,8 +101,8 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 		recipeMap[recipe.ID] = recipe
 	}
 
-	// Parse the meal type, dietary restriction, and ingredients from the query parameters
-	mealType := r.URL.Query().Get("meal_type")
+	// Parse the meal types, dietary restrictions, and ingredients from the query parameters
+	mealTypes := r.URL.Query()["meal_type"] // Updated to retrieve multiple meal types
 	dietaryRestrictions := r.URL.Query()["dietary_restriction"]
 	ingredients := r.URL.Query().Get("ingredients")
 
@@ -123,24 +111,15 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Iterate over the recipes map
 	for _, recipe := range recipeMap {
-		// Check if the meal type matches the query or the query is empty
-		if mealType == "" || strings.EqualFold(mealType, "none") || strings.EqualFold(recipe.MealType, mealType) {
-			// Check if any of the recipe's dietary restrictions match any of the dietary restrictions specified in the query
-			if len(dietaryRestrictions) == 0 {
-				// If no dietary restrictions are specified in the query, add the recipe to the matching recipes slice
+		// Check if the recipe matches any of the specified meal types or if no meal types are specified
+		if len(mealTypes) == 0 || containsMealType(recipe, mealTypes) {
+			// Check if any of the recipe's dietary restrictions match any of the specified dietary restrictions or if no restrictions are specified
+			dietaryRestrictions := strings.Join(dietaryRestrictions, " ")
+			if len(dietaryRestrictions) == 0 || recipeHasDietaryRestriction(recipe, dietaryRestrictions) {
+				// Check if the recipe contains the specified ingredients or if no ingredients are specified
 				if containsIngredients(recipe, ingredients) {
+					// Add the recipe to the matching recipes slice
 					matchingRecipes = append(matchingRecipes, recipe)
-				}
-			} else {
-				// Iterate over the dietary restrictions specified in the query
-				for _, restriction := range dietaryRestrictions {
-					// Check if the recipe has the current dietary restriction
-					if recipeHasDietaryRestriction(recipe, restriction) && containsIngredients(recipe, ingredients) {
-						// If the recipe has the dietary restriction and contains the ingredients, add it to the matching recipes slice
-						matchingRecipes = append(matchingRecipes, recipe)
-						// Break out of the loop since the recipe has already been added
-						break
-					}
 				}
 			}
 		}
@@ -164,6 +143,25 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Write the JSON response
 	w.Write(recipesJSON)
+}
+
+func containsMealType(recipe Recipe, mealTypes []string) bool {
+	if len(mealTypes) == 0 {
+		return true // If no meal types are specified, all recipes are considered to contain the meal types
+	}
+
+	recipeMealTypes := strings.Join(recipe.MealType, " ")
+	// Convert the recipe's meal types to lowercase for case-insensitive comparison
+	recipeMealTypesLower := strings.ToLower(recipeMealTypes)
+
+	// Iterate over the specified meal types
+	for _, mealType := range mealTypes {
+		// Check if the current meal type is found in the recipe's meal types
+		if strings.Contains(recipeMealTypesLower, strings.ToLower(mealType)) {
+			return true
+		}
+	}
+	return false
 }
 func recipeHasDietaryRestriction(recipe Recipe, restriction string) bool {
 	// If the restriction is "None" or blank, consider it as no restriction

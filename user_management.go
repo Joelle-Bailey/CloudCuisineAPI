@@ -53,84 +53,51 @@ func main() {
 func detailPageHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse the recipe ID from the query parameters
 	id := r.URL.Query().Get("id")
-	call := r.URL.Query().Get("call")
 
-	if call == "favorites" {
-		// Make a GET request to fetch the recipe details based on the ID
-		resp, err := http.Get(fmt.Sprintf("http://localhost:8081/details?id=%s", id))
-		if err != nil {
-			http.Error(w, "Failed to fetch recipe details", http.StatusInternalServerError)
-			return
-		}
-		defer resp.Body.Close()
-
-		// Check the status code of the response
-		if resp.StatusCode != http.StatusOK {
-			http.Error(w, "Failed to fetch recipe details", http.StatusInternalServerError)
-			return
-		}
-
-		// Decode the JSON response into a Recipe struct
-		var recipe Recipe
-		err = json.NewDecoder(resp.Body).Decode(&recipe)
-		if err != nil {
-			http.Error(w, "Failed to decode recipe details", http.StatusInternalServerError)
-			return
-		}
-
-		// Render the recipe details page using a template
-		tmpl := template.Must(template.ParseFiles("recipe-details.html"))
-		err = tmpl.Execute(w, recipe)
-		if err != nil {
-			http.Error(w, "Failed to render recipe details page", http.StatusInternalServerError)
-			return
-		}
+	apiKey := os.Getenv("SPOONACULAR_API_KEY")
+	if apiKey == "" {
+		http.Error(w, "Spoonacular API key not found", http.StatusInternalServerError)
+		return
 	}
-	if call == "api" {
-		apiKey := os.Getenv("SPOONACULAR_API_KEY")
-		if apiKey == "" {
-			http.Error(w, "Spoonacular API key not found", http.StatusInternalServerError)
-			return
-		}
 
-		// Make a GET request to fetch the recipe details based on the ID
-		url := fmt.Sprintf("https://api.spoonacular.com/recipes/%s/information?apiKey=%s", id, apiKey)
+	// Make a GET request to fetch the recipe details based on the ID
+	url := fmt.Sprintf("https://api.spoonacular.com/recipes/%s/information?apiKey=%s", id, apiKey)
 
-		// Make the GET request to the external API
-		resp, err := http.Get(url)
-		if err != nil {
-			http.Error(w, "Failed to fetch recipe details", http.StatusInternalServerError)
-			return
-		}
-		defer resp.Body.Close()
+	// Make the GET request to the external API
+	resp, err := http.Get(url)
+	if err != nil {
+		http.Error(w, "Failed to fetch recipe details", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
 
-		// Check the status code of the response
-		if resp.StatusCode != http.StatusOK {
-			http.Error(w, "Failed to fetch recipe details", http.StatusInternalServerError)
-			return
-		}
+	// Check the status code of the response
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Failed to fetch recipe details", http.StatusInternalServerError)
+		return
+	}
 
-		// Read the response body
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			http.Error(w, "Failed to read response body", http.StatusInternalServerError)
-			return
-		}
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Failed to read response body", http.StatusInternalServerError)
+		return
+	}
 
-		// Decode the JSON response into a Recipe struct
-		recipe, err := ParseRecipe(body)
-		if err != nil {
-			http.Error(w, "Error decoding JSON", http.StatusInternalServerError)
-			return
-		}
+	// Decode the JSON response into a Recipe struct
+	recipe, err := ParseRecipe(body)
+	if err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusInternalServerError)
+		return
+	}
 
-		// Render the recipe details page using a template
-		tmpl := template.Must(template.ParseFiles("recipe-details.html"))
-		err = tmpl.Execute(w, recipe)
-		if err != nil {
-			http.Error(w, "Failed to render recipe details page", http.StatusInternalServerError)
-			return
-		}
+	// Render the recipe details page using a template
+	tmpl := template.Must(template.ParseFiles("recipe-details.html"))
+	err = tmpl.Execute(w, recipe)
+	if err != nil {
+		http.Error(w, "Failed to render recipe details page", http.StatusInternalServerError)
+		return
+
 	}
 }
 

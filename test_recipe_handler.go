@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -9,7 +10,7 @@ import (
 
 // Recipe represents the JSON data structure
 type Recipe struct {
-	ID                 string   `json:"id"`
+	ID                 int      `json:"id"`
 	Title              string   `json:"title"`
 	Ingredients        []string `json:"ingredients"`
 	Instructions       string   `json:"instructions"`
@@ -18,7 +19,7 @@ type Recipe struct {
 	DietaryRestriction []string `json:"dietary_restriction"`
 }
 
-var recipes = map[string]Recipe{
+/* var recipes = map[string]Recipe{
 	"1": Recipe{
 		ID:                 "1",
 		Title:              "Pizza - Test Recipe",
@@ -46,14 +47,13 @@ var recipes = map[string]Recipe{
 		MealType:           "",
 		DietaryRestriction: []string{},
 	},
-}
+} */
 
 func main() {
 	mux := http.NewServeMux()
 	// Define a handler function for the test recipe endpoint
 	http.HandleFunc("/recipe", recipeHandler)
 	mux.Handle("/recipe", http.HandlerFunc(recipeHandler))
-	mux.Handle("/details", http.HandlerFunc(detailHandler))
 
 	log.Fatal(http.ListenAndServe("localhost:8081", mux))
 }
@@ -62,6 +62,7 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")             // Allow requests from any origin
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS") // Allow GET and OPTIONS methods
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type") // Include Content-Type header
 
 	// Check if the request method is OPTIONS (preflight request)
 	if r.Method == "OPTIONS" {
@@ -73,6 +74,45 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	// Fetch recipes from localhost:8003/list
+	resp, err := http.Get("http://localhost:8003/list")
+	if err != nil {
+		http.Error(w, "Failed to fetch recipe data", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Parse the JSON response into a slice of Recipe structs
+	var recipes []Recipe
+
+	// Create a new JSON decoder
+	decoder := json.NewDecoder(resp.Body)
+
+	// Iterate through the JSON tokens
+	for decoder.More() {
+		// Decode the next JSON token
+		var recipe Recipe
+		err := decoder.Decode(&recipe)
+		if err != nil {
+			// If an error occurs, log it and stop decoding
+			fmt.Println("Error decoding JSON:", err)
+			break
+		}
+
+		// Process the decoded recipe
+		fmt.Println("Decoded Recipe:", recipe)
+
+		// Append the decoded recipe to the recipes slice
+		recipes = append(recipes, recipe)
+	}
+
+	// Store recipes in a map
+	recipeMap := make(map[int]Recipe)
+	for _, recipe := range recipes {
+		recipeMap[recipe.ID] = recipe
+	}
+
 	// Parse the meal type, dietary restriction, and ingredients from the query parameters
 	mealType := r.URL.Query().Get("meal_type")
 	dietaryRestrictions := r.URL.Query()["dietary_restriction"]
@@ -82,7 +122,7 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 	var matchingRecipes []Recipe
 
 	// Iterate over the recipes map
-	for _, recipe := range recipes {
+	for _, recipe := range recipeMap {
 		// Check if the meal type matches the query or the query is empty
 		if mealType == "" || strings.EqualFold(mealType, "none") || strings.EqualFold(recipe.MealType, mealType) {
 			// Check if any of the recipe's dietary restrictions match any of the dietary restrictions specified in the query
@@ -125,7 +165,6 @@ func recipeHandler(w http.ResponseWriter, r *http.Request) {
 	// Write the JSON response
 	w.Write(recipesJSON)
 }
-
 func recipeHasDietaryRestriction(recipe Recipe, restriction string) bool {
 	// If the restriction is "None" or blank, consider it as no restriction
 	if strings.TrimSpace(strings.ToLower(restriction)) == "none" || restriction == "" {
@@ -160,30 +199,4 @@ func containsIngredients(recipe Recipe, ingredients string) bool {
 		}
 	}
 	return true
-}
-
-func detailHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the recipe ID from the query parameters
-	id := r.URL.Query().Get("id")
-
-	// Fetch the recipe with the corresponding ID from your data source
-	recipe, found := recipes[id]
-	if !found {
-		http.Error(w, "Recipe not found", http.StatusNotFound)
-		return
-	}
-
-	// Marshal the recipe into JSON format
-	recipeJSON, err := json.Marshal(recipe)
-	if err != nil {
-		http.Error(w, "Failed to marshal recipe JSON", http.StatusInternalServerError)
-		return
-	}
-
-	// Set the Content-Type header to application/json
-	w.Header().Set("Content-Type", "application/json")
-
-	// Write the JSON response
-	w.Write(recipeJSON)
-
 }

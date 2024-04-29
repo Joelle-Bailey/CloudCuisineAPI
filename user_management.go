@@ -149,7 +149,6 @@ func recipeBookHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to fetch recipe book data", http.StatusInternalServerError)
 		return
 	}
-
 	var recipes []Recipe
 
 	// Create a new JSON decoder
@@ -168,6 +167,9 @@ func recipeBookHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Process the decoded recipe
 		fmt.Println("Decoded Recipe:", recipe)
+
+		// Append the decoded recipe to the recipes slice
+		recipes = append(recipes, recipe)
 	}
 
 	// Render the recipe book page using a template

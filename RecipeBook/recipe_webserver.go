@@ -20,7 +20,7 @@ const (
 
 // Recipe struct represents a recipe document
 type Recipe struct {
-	ID                 float64  `bson:"_id,omitempty" json:"id"`
+	ID                 int      `bson:"_id" json:"id"`
 	Title              string   `bson:"title" json:"title"`
 	Ingredients        []string `bson:"ingredients" json:"ingredients"`
 	Instructions       string   `bson:"instructions" json:"instructions"`
@@ -76,7 +76,7 @@ func newDatabase() *database {
 	checkError(err)
 
 	// Connect to MongoDB
-	ctx, _ := context.WithTimeout(context.Background(), 100*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 1000*time.Second)
 	err = client.Connect(ctx)
 	checkError(err)
 
@@ -198,15 +198,15 @@ func (db database) remove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse recipe ID from the query parameter
-	recipeID := r.URL.Query().Get("id")
-	if recipeID == "" {
+	title := r.URL.Query().Get("title")
+	if title == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "missing recipe ID parameter")
+		fmt.Fprintf(w, "missing recipe title parameter")
 		return
 	}
 
 	// Delete the recipe from the database
-	filter := bson.M{"_id": recipeID}
+	filter := bson.M{"title": title}
 	res, err := db.data.DeleteOne(db.connect, filter)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -217,7 +217,7 @@ func (db database) remove(w http.ResponseWriter, r *http.Request) {
 	// Check if a recipe was deleted
 	if res.DeletedCount == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "recipe not found")
+		fmt.Fprintf(w, "recipe not found with ID: %s\n", title)
 		return
 	}
 

@@ -1,0 +1,94 @@
+package main
+
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+type Ingredient struct {
+	Name   string
+	Amount float64
+	Unit   string
+}
+
+func main() {
+	recipe := `
+		1 cup flour
+		2 eggs
+		1/2 cup sugar
+		1 tsp vanilla extract
+	`
+
+	scaledRecipe := ScaleRecipe(recipe, 2.0)
+	fmt.Println("Scaled Recipe:")
+	fmt.Println(scaledRecipe)
+}
+
+func ScaleRecipe(recipe string, scaleFactor float64) string {
+	lines := strings.Split(recipe, "\n")
+	var scaledLines []string
+
+	for _, line := range lines {
+		if line != "" {
+			ingredient := parseIngredient(line)
+			if ingredient != nil {
+				scaledAmount := ingredient.Amount * scaleFactor
+				scaledLine := fmt.Sprintf("%g %s %s", scaledAmount, ingredient.Unit, ingredient.Name)
+				scaledLines = append(scaledLines, scaledLine)
+			} else {
+				scaledLines = append(scaledLines, line)
+			}
+		}
+	}
+
+	return strings.Join(scaledLines, "\n")
+}
+
+func parseIngredient(line string) *Ingredient {
+	re := regexp.MustCompile(`(\d+\.?\d*\s*(?:cup|tsp|tbsp)\s*)(.*)`)
+	match := re.FindStringSubmatch(line)
+	if len(match) == 3 {
+		amountStr := strings.TrimSpace(match[1])
+		unitAndName := strings.TrimSpace(match[2])
+
+		amount, err := parseAmount(amountStr)
+		if err != nil {
+			return nil
+		}
+
+		return &Ingredient{
+			Name:   unitAndName,
+			Amount: amount,
+			Unit:   unitAndName,
+		}
+	}
+
+	return nil
+}
+
+func parseAmount(amountStr string) (float64, error) {
+	amountStr = strings.ReplaceAll(amountStr, " ", "")
+	parts := strings.Split(amountStr, "/")
+	if len(parts) == 1 {
+		return strconv.ParseFloat(parts[0], 64)
+	} else if len(parts) == 2 {
+		numerator, err := strconv.ParseFloat(parts[0], 64)
+		if err != nil {
+			return 0, err
+		}
+		denominator, err := strconv.ParseFloat(parts[1], 64)
+		if err != nil {
+			return 0, err
+		}
+		return numerator / denominator, nil
+	} else {
+		return 0, fmt.Errorf("invalid amount string: %s", amountStr)
+	}
+}
+
+
+
+
+

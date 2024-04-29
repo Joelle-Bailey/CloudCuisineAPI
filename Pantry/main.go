@@ -39,7 +39,9 @@ type database struct {
 	userCollection       *mongo.Collection
 	
 }
+//for the cookie session
 var store = sessions.NewCookieStore([]byte("secret"))
+
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -177,7 +179,7 @@ func (db *database) signInSubmit(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         if err == mongo.ErrNoDocuments {
             // User does not exist
-            http.Error(w, "username or password is incorrect", http.StatusUnauthorized)
+            http.Error(w, "username  is incorrect", http.StatusUnauthorized)
             return
         }
         // Other error occurred
@@ -188,7 +190,7 @@ func (db *database) signInSubmit(w http.ResponseWriter, r *http.Request) {
     // Compare the password from the database with the provided password
     if existingUser.Password != password {
         // Incorrect password
-        http.Error(w, "username or password is incorrect", http.StatusUnauthorized)
+        http.Error(w, "password is incorrect", http.StatusUnauthorized)
         return
     }
 
@@ -201,7 +203,7 @@ func (db *database) signInSubmit(w http.ResponseWriter, r *http.Request) {
     session.Values["username"] = username
     session.Save(r, w)
 
-    // Redirect to the home page
+    // Redirect to the pantry
     http.Redirect(w, r, "/pantry", http.StatusFound)
 }
 

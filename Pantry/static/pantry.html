@@ -69,20 +69,20 @@
 
 
         <ul id="ingredient-list"></ul>
-
+            <!-- Change the button to go to her directory ,post ,or put in order to send data to the next page  -->
         <button id="search-btn" onclick="searchIngredients()">Search</button>
 
         <script>
             let ingredients = [];
-            fetch('/username')
-                .then(response => response.json())
-                .then(data => {
-                    const welcomeUser = document.getElementById('welcome-user');
-                    welcomeUser.textContent = `Welcome Back, ${data.username}!`;
-                })
-                .catch(error => {
-                    console.error('Error fetching username:', error);
-                });
+            // fetch('/username')
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         const welcomeUser = document.getElementById('welcome-user');
+            //         welcomeUser.textContent = `Welcome Back, ${data.username}!`;
+            //     })
+            //     .catch(error => {
+            //         console.error('Error fetching username:', error);
+            //     });
 
 
 

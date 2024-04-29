@@ -1,0 +1,52 @@
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func scaleRecipe(servings int) {
+	// Original recipe for 12 servings
+	originalServings := 12
+	// Ingredient amounts for the original recipe
+	flour := 1.5 // cups
+	sugar := 0.75 // cups
+	bakingPowder := 1.5 // teaspoons
+	salt := 0.5 // teaspoons
+	butter := 0.5 // cups
+	milk := 0.5 // cups
+	egg := 1
+	vanillaExtract := 1 // teaspoon
+	blueberries := 1.5 // cups
+
+	// Scale the ingredients
+	scaleFactor := float64(servings) / float64(originalServings)
+	flour *= scaleFactor
+	sugar *= scaleFactor
+	bakingPowder *= scaleFactor
+	salt *= scaleFactor
+	butter *= scaleFactor
+	milk *= scaleFactor
+	egg = int(math.Round(float64(egg) * scaleFactor))
+	vanillaExtract *= scaleFactor
+	blueberries *= scaleFactor
+
+	// Print the scaled recipe
+	fmt.Println("Scaled Recipe for", servings, "servings:")
+	fmt.Println("Flour:", flour, "cups")
+	fmt.Println("Sugar:", sugar, "cups")
+	fmt.Println("Baking Powder:", bakingPowder, "teaspoons")
+	fmt.Println("Salt:", salt, "teaspoons")
+	fmt.Println("Butter:", butter, "cups")
+	fmt.Println("Milk:", milk, "cups")
+	fmt.Println("Egg:", egg)
+	fmt.Println("Vanilla Extract:", vanillaExtract, "teaspoons")
+	fmt.Println("Blueberries:", blueberries, "cups")
+}
+
+func main() {
+	var servings int
+	fmt.Print("Enter the number of servings: ")
+	fmt.Scan(&servings)
+	scaleRecipe(servings)
+}

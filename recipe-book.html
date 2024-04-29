@@ -26,32 +26,10 @@
             </div>
         </nav>
     </header>
-    <main class="container mt-4">
+    <main class="container mt-4" id="recipeContainer">
         <h1>Recipe Book</h1>
         <div class="row">
-            <!-- Recipe 1 -->
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="https://via.placeholder.com/150" class="card-img-top" alt="Recipe 1">
-                    <div class="card-body">
-                        <h5 class="card-title">Recipe 1</h5>
-                        <p class="card-text">Description of Recipe 1.</p>
-                        <a href="#" class="btn btn-primary">View Recipe</a>
-                    </div>
-                </div>
-            </div>
-            <!-- Recipe 2 -->
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="https://via.placeholder.com/150" class="card-img-top" alt="Recipe 2">
-                    <div class="card-body">
-                        <h5 class="card-title">Recipe 2</h5>
-                        <p class="card-text">Description of Recipe 2.</p>
-                        <a href="#" class="btn btn-primary">View Recipe</a>
-                    </div>
-                </div>
-            </div>
-            <!-- Add more recipes as needed -->
+            <!-- Recipe cards will be dynamically added here -->
         </div>
     </main>
     <!-- Bootstrap JavaScript -->
@@ -59,23 +37,81 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        function addRecipe() {
-            // Generate the HTML for a new recipe card
-            var recipeCard = `
+        // Function to fetch recipe data from localhost:8003/list
+        async function fetchRecipes() {
+            try {
+                const response = await fetch('http://localhost:8003/list');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch recipes');
+                }
+                const recipeData = await response.json();
+                // Decode JSON data and add recipe cards
+                decodeAndAddRecipes(recipeData);
+            } catch (error) {
+                console.error('Error fetching recipes:', error);
+            }
+        }
+
+        // Function to decode JSON data and add recipe cards
+        function decodeAndAddRecipes(recipeData) {
+            try {
+                // Check if recipeData is an array
+                if (!Array.isArray(recipeData)) {
+                    throw new Error('Invalid recipe data format');
+                }
+                // Iterate over each recipe and add recipe cards
+                recipeData.forEach(recipe => {
+                    addRecipeCard(recipe);
+                });
+            } catch (error) {
+                console.error('Error decoding and adding recipes:', error);
+            }
+        }
+
+        // Function to add a recipe card to the container
+        function addRecipeCard(recipe) {
+            const recipeCard = `
                 <div class="col-md-4 mb-4">
                     <div class="card">
-                        <img src="https://via.placeholder.com/150" class="card-img-top" alt="Recipe Image">
+                        <img src="${recipe.image}" class="card-img-top" alt="${recipe.title}">
                         <div class="card-body">
-                            <h5 class="card-title">New Recipe</h5>
-                            <p class="card-text">Description of the new recipe.</p>
+                            <h5 class="card-title">${recipe.title}</h5>
                             <a href="/" class="btn btn-primary">View Recipe</a>
+                            <button class="btn btn-danger remove-btn" data-id="${recipe.id}">Remove Recipe</button>
                         </div>
                     </div>
                 </div>
             `;
+            document.querySelector('.row').innerHTML += recipeCard;
+        }
 
-            // Append the new recipe card to the recipe container
-            document.getElementById('recipeContainer').innerHTML += recipeCard;
+        // Call fetchRecipes when the page loads
+        window.onload = fetchRecipes;
+
+        // Add event listener for remove buttons
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-btn')) {
+                const recipeId = event.target.getAttribute('data-id');
+                removeRecipe(recipeId);
+            }
+        });
+
+        // Function to remove a recipe
+        async function removeRecipe(recipeId) {
+            try {
+                const response = await fetch(`http://localhost:8003/remove?id=${recipeId}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    // If successful, remove the recipe card from the UI
+                    const cardToRemove = document.querySelector(`.remove-btn[data-id="${recipeId}"]`).closest('.col-md-4');
+                    cardToRemove.remove();
+                } else {
+                    console.error('Failed to remove recipe');
+                }
+            } catch (error) {
+                console.error('Error removing recipe:', error);
+            }
         }
     </script>
 </body>

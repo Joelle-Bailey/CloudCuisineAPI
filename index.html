@@ -165,6 +165,56 @@
             // Call fetchAndDisplayRecipes function when the page loads
             fetchAndDisplayRecipes();
 
+
+            // Define the addToFavorites function
+            function addToFavorites(recipe) {
+                // Construct the URL with selected values
+                const url = `/api/get/?id=${recipe.id}`;
+
+                // Fetch recipe data from the API
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch recipe data');
+                        }
+                        return response.json(); // Decode the JSON response
+                    })
+                    .then(decodedRecipe => {
+                        // Now that we have the decoded recipe object, we can send it to the server
+                        fetch('http://localhost:8003/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(decodedRecipe) // Send the decoded recipe object
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Failed to add recipe to favorites');
+                                }
+                                alert('Recipe added to favorites successfully!');
+                            })
+                            .catch(error => {
+                                console.error('Error adding recipe to favorites:', error);
+                                alert('Failed to add recipe to favorites. Please try again later.');
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching recipe data:', error);
+                        alert('Failed to fetch recipe data. Please try again later.');
+                    });
+            }
+
+            // Function to create a favorite button
+            function createFavoriteButton(recipe) {
+                const button = document.createElement("button");
+                button.textContent = "Favorite";
+                button.className = "btn btn-primary favorite-btn";
+                button.onclick = function() {
+                    addToFavorites(recipe);
+                };
+                return button;
+            }
             // Function to fetch and display matching recipes from Spoonacular API
             function fetchAdditionalRecipes() {
                 // Get selected values from dropdowns
@@ -173,7 +223,7 @@
                 const ingredients = document.getElementById("ingredients").value;
 
                 // Construct the URL with selected values
-                const url = `/api/?type=${mealType}&diet=${dietaryRestriction}&includeIngredients=${ingredients}`;
+                const url = `/api/search/?type=${mealType}&diet=${dietaryRestriction}&includeIngredients=${ingredients}`;
 
                 fetch(url)
                     .then(response => {
@@ -194,30 +244,33 @@
                             additionalRecipeList.appendChild(errorMessage);
                         } else {
                             // Iterate over the additional recipes and create list items
+                            // Inside the .then block where you iterate over additional recipes and create list items:
                             data.results.forEach(recipe => {
                                 const listItem = document.createElement("li");
                                 listItem.className = "list-group-item";
-                                // Create a link element
+
+                                // Create a link element for the recipe title
                                 const link = document.createElement("a");
                                 link.textContent = recipe.title; // Use lowercase 'title' property
-                                // Set the href attribute to the recipe details page URL with the recipe ID as a query parameter
                                 link.href = `/recipe-details?id=${recipe.id}&call=api`;
-                                // Set the target attribute to "_blank" to open the link in a new tab/window
                                 link.target = "_blank";
-                                
-                                // Create image element
+                                link.className = "list-link";
+
+                                // Create an image element for the recipe thumbnail
                                 const image = document.createElement("img");
-                                image.src = recipe.image; // Assuming there's a 'photoUrl' property in each recipe object
-                                image.alt = recipe.title; // Assuming 'title' is used as alt text for accessibility
-                                image.className = "recipe-thumbnail"; // Apply a class for styling, if needed
+                                image.src = recipe.image;
+                                image.alt = recipe.title;
+                                image.className = "recipe-thumbnail";
 
-                                // Append the link to the list item
+                                // Append the link and image elements to the list item
                                 listItem.appendChild(image);
-
-                                // Append the link to the list item
                                 listItem.appendChild(link);
-                                
-                                // Append the list item to the recipe list
+
+                                // Create and append the favorite button only for additional recipes
+                                const favoriteButton = createFavoriteButton(recipe);
+                                listItem.appendChild(favoriteButton);
+
+                                // Append the list item to the additional recipe list
                                 additionalRecipeList.appendChild(listItem);
                             });
                         }

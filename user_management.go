@@ -40,7 +40,10 @@ func main() {
 	http.HandleFunc("/pantry/", pantryPageHandler)
 
 	// Define a handler function for the recipe details page
-	http.HandleFunc("/api/", externalAPIHandler)
+	http.HandleFunc("/api/search/", externalAPIHandler)
+
+	// Define a handler function for the recipe details page
+	http.HandleFunc("/api/get/", externalAPI_IDHandler)
 
 	// Start the web server
 	http.ListenAndServe(":8080", nil)
@@ -134,7 +137,7 @@ func detailPageHandler(w http.ResponseWriter, r *http.Request) {
 func recipeBookHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Make a GET request to fetch the recipe book data
-	resp, err := http.Get("http://localhost:8081/recipe?")
+	resp, err := http.Get("http://localhost:8003/list")
 	if err != nil {
 		http.Error(w, "Failed to fetch recipe book data", http.StatusInternalServerError)
 		return
@@ -147,12 +150,24 @@ func recipeBookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode the JSON response into a slice of Recipe structs
 	var recipes []Recipe
-	err = json.NewDecoder(resp.Body).Decode(&recipes)
-	if err != nil {
-		http.Error(w, "Failed to decode recipe book data", http.StatusInternalServerError)
-		return
+
+	// Create a new JSON decoder
+	decoder := json.NewDecoder(resp.Body)
+
+	// Iterate through the JSON tokens
+	for decoder.More() {
+		// Decode the next JSON token
+		var recipe Recipe
+		err := decoder.Decode(&recipe)
+		if err != nil {
+			// If an error occurs, log it and stop decoding
+			fmt.Println("Error decoding JSON:", err)
+			break
+		}
+
+		// Process the decoded recipe
+		fmt.Println("Decoded Recipe:", recipe)
 	}
 
 	// Render the recipe book page using a template
@@ -166,7 +181,7 @@ func recipeBookHandler(w http.ResponseWriter, r *http.Request) {
 
 func pantryPageHandler(w http.ResponseWriter, r *http.Request) {
 	// Make a GET request to fetch the pantry data
-	resp, err := http.Get("http://localhost:8081/pantry")
+	resp, err := http.Get("http://localhost:8002/list")
 	if err != nil {
 		http.Error(w, "Failed to fetch pantry data", http.StatusInternalServerError)
 		return
@@ -194,7 +209,6 @@ func pantryPageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to render pantry page", http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func ParseRecipe(data []byte) (Recipe, error) {
@@ -268,6 +282,46 @@ func externalAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Construct the URL for the external API request
 	url := fmt.Sprintf("https://api.spoonacular.com/recipes/complexSearch?apiKey=%s&instructionsRequired=true&type=%s&diet=%s&includeIngredients=%s", apiKey, mealType, dietaryRestriction, ingredients)
+
+	// Make the GET request to the external API
+	resp, err := http.Get(url)
+	if err != nil {
+		http.Error(w, "Failed to fetch data from external API", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Failed to read response from external API", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the content type header
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write the response body to the client
+	_, err = w.Write(body)
+	if err != nil {
+		http.Error(w, "Failed to write response to client", http.StatusInternalServerError)
+		return
+	}
+}
+
+func externalAPI_IDHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	query := r.URL.Query()
+	id := query.Get("id")
+
+	apiKey := os.Getenv("SPOONACULAR_API_KEY")
+	if apiKey == "" {
+		http.Error(w, "Spoonacular API key not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Construct the URL for the external API request
+	url := fmt.Sprintf("https://api.spoonacular.com/recipes/%s/information?apiKey=%s", id, apiKey)
 
 	// Make the GET request to the external API
 	resp, err := http.Get(url)

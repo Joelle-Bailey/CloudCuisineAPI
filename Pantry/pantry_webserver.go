@@ -124,6 +124,10 @@ func (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) { // adap
 }
 
 func (db database) list(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")             // Allow requests from any origin
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS") // Allow GET and OPTIONS methods
+
 	filter := bson.M{"item": bson.M{"$exists": true}}
 
 	// Find all documents
@@ -159,6 +163,10 @@ func (db database) list(w http.ResponseWriter, r *http.Request) {
 }
 
 func (db database) amount(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")             // Allow requests from any origin
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS") // Allow GET and OPTIONS methods
+
 	item := r.URL.Query().Get("item")
 
 	// find one document
@@ -178,6 +186,9 @@ func (db database) amount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (db database) create(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")                   // Allow requests from any origin
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS") // Allow GET and OPTIONS methods
 
 	item := r.URL.Query().Get("item")
 	amount := r.URL.Query().Get("amount")
@@ -228,6 +239,10 @@ func (db database) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (db database) update(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")                   // Allow requests from any origin
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS") // Allow GET and OPTIONS methods
+
 	item := r.URL.Query().Get("item")
 	amount := r.URL.Query().Get("amount")
 
@@ -250,6 +265,10 @@ func (db database) update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (db database) remove(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")                   // Allow requests from any origin
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS") // Allow GET and OPTIONS methods
+
 	item := r.URL.Query().Get("item")
 
 	// Create a filter to find the item document

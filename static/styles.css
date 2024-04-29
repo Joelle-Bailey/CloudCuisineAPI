@@ -57,6 +57,11 @@ footer {
     margin-right: 10px; /* Optional: Add spacing between image and text */
 }
 
+.favorite-btn {
+    display: block;
+    margin-left: 10px;
+}
+
 /* Style for list items */
 .list-group-item {
     display: flex; /* Use flexbox */

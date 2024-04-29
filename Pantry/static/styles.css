@@ -1,0 +1,76 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+}
+
+main {
+    padding: 20px;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+.recipes {
+    margin-top: 20px;
+}
+
+.recipes h2 {
+    margin-bottom: 10px;
+}
+
+.recipes ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.recipes li {
+    margin-bottom: 5px;
+}
+
+.recipes li a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+.recipes li a:hover {
+    text-decoration: underline;
+}
+
+.recipe-thumbnail {
+    width: 100px; /* Adjust width as needed */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Ensure image is displayed as a block element */
+    margin-right: 10px; /* Optional: Add spacing between image and text */
+}
+
+.favorite-btn {
+    display: block;
+    margin-left: 10px;
+}
+
+/* Style for list items */
+.list-group-item {
+    display: flex; /* Use flexbox */
+    align-items: center; /* Center items vertically */
+}
+
+.list-group-item .recipe-thumbnail {
+    margin-right: 10px; /* Optional: Add spacing between image and text */
+}
+
+
+

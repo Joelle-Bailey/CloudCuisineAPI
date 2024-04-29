@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Book</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">Cloud Cuisine</a>
+                <!-- Dropdown menu for other pages -->
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        More
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="/">Home</a>
+                        <a class="dropdown-item" href="/recipe-book">Recipe Book</a>
+                        <a class="dropdown-item" href="/pantry">Pantry</a>
+                    </div>
+                </div>
+                <!-- End of dropdown menu -->
+            </div>
+        </nav>
+    </header>
+    <main class="container mt-4" id="recipeContainer">
+        <h1>Recipe Book</h1>
+        <div class="row">
+            <!-- Recipe cards will be dynamically added here -->
+        </div>
+    </main>
+    <!-- Bootstrap JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Function to fetch recipe data from localhost:8003/list
+        async function fetchRecipes() {
+            try {
+                const response = await fetch('http://localhost:8003/list');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch recipes');
+                }
+                const recipeData = await response.json();
+                // Decode JSON data and add recipe cards
+                decodeAndAddRecipes(recipeData);
+            } catch (error) {
+                console.error('Error fetching recipes:', error);
+            }
+        }
+
+        // Function to decode JSON data and add recipe cards
+        function decodeAndAddRecipes(recipeData) {
+            try {
+                // Check if recipeData is an array
+                if (!Array.isArray(recipeData)) {
+                    throw new Error('Invalid recipe data format');
+                }
+                // Iterate over each recipe and add recipe cards
+                recipeData.forEach(recipe => {
+                    addRecipeCard(recipe);
+                });
+            } catch (error) {
+                console.error('Error decoding and adding recipes:', error);
+            }
+        }
+
+        // Function to add a recipe card to the container
+        function addRecipeCard(recipe) {
+            const recipeCard = `
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <img src="${recipe.image}" class="card-img-top" alt="${recipe.title}">
+                        <div class="card-body">
+                            <h5 class="card-title">${recipe.title}</h5>
+                            <a href="/recipe-details/?id=${recipe.id}" class="btn btn-primary">View Recipe</a>
+                            <button class="btn btn-danger remove-btn" data-id="${recipe.title}">Remove Recipe</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.querySelector('.row').innerHTML += recipeCard;
+        }
+
+        // Call fetchRecipes when the page loads
+        window.onload = fetchRecipes;
+
+        // Add event listener for remove buttons
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-btn')) {
+                const recipeId = event.target.getAttribute('data-id');
+                removeRecipe(recipeId);
+            }
+        });
+
+        // Function to remove a recipe
+        async function removeRecipe(recipeId) {
+            try {
+                const response = await fetch(`http://localhost:8003/remove?title=${recipeId}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    // If successful, remove the recipe card from the UI
+                    const cardToRemove = document.querySelector(`.remove-btn[data-id="${recipeId}"]`).closest('.col-md-4');
+                    cardToRemove.remove();
+                } else {
+                    console.error('Failed to remove recipe');
+                }
+            } catch (error) {
+                console.error('Error removing recipe:', error);
+            }
+        }
+    </script>
+</body>
+</html>

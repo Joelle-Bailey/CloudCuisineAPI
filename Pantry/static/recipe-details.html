@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title style="text-align: right;">Cloud Cuisine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/recipe-styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">Cloud Cuisine</a>
+                <a class="navbar-brand" href="/">Cloud Cuisine</a>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        More
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="/">Home</a>
+                        <a class="dropdown-item" href="/recipe-book">Recipe Book</a>
+                        <a class="dropdown-item" href="/pantry">Pantry</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Recipe image -->
+                <img src="{{.PhotoURL}}" alt="Recipe Image" class="img-fluid mb-3">
+                <!-- Recipe instructions -->
+                <h2>{{.Title}}</h2>
+                <p><strong>Meal Type:</strong> {{.MealType}}</p>
+                {{if gt (len .DietaryRestriction) 0}}
+                    <p><strong>Dietary Restrictions:</strong></p>
+                    <ul>
+                        {{range .DietaryRestriction}}
+                            <li>{{.}}</li>
+                        {{end}}
+                    </ul>
+                {{end}}
+                <h3>Instructions</h3>
+                <p>{{.Instructions}}</p>
+            </div>
+            <div class="col-md-4">
+                <!-- Ingredients sidebar -->
+                <h2>Ingredients</h2>
+                <ul>
+                    {{range .Ingredients}}
+                        <li>{{.}}</li>
+                    {{end}}
+                </ul>
+                <!-- Other Recipes section -->
+                <h2>Other Recipes</h2>
+                <ul>
+                    <!-- Add other recipe links here -->
+                    <li><a href="/">Recipe 1</a></li>
+                    <li><a href="/">Recipe 2</a></li>
+                    <li><a href="/">Recipe 3</a></li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <a href="#header" class="text-muted">Back to Top</a>
+            <span class="text-muted">&copy; 2024 Cloud Cuisine</span>
+        </div>
+    </footer>
+</body>
+</html>

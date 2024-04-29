@@ -1,0 +1,67 @@
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "text/template"
+)
+
+type Recipe struct {
+    Ingredients []Ingredient `json:"ingredients"`
+}
+
+type Ingredient struct {
+    Name   string  `json:"name"`
+    Amount float64 `json:"amount"`
+    Unit   string  `json:"unit"`
+}
+
+func ScaleRecipe(w http.ResponseWriter, r *http.Request) {
+    var recipe Recipe
+    err := json.NewDecoder(r.Body).Decode(&recipe)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    scaleFactor, err := parseScaleFactor(r.URL.Query().Get("scale"))
+    if err != nil {
+        http.Error(w, "Invalid scale factor", http.StatusBadRequest)
+        return
+    }
+
+    scaledIngredients := make([]Ingredient, len(recipe.Ingredients))
+    for i, ing := range recipe.Ingredients {
+        scaledIngredients[i] = Ingredient{
+            Name:   ing.Name,
+            Amount: ing.Amount * scaleFactor,
+            Unit:   ing.Unit,
+        }
+    }
+
+    scaledRecipe := Recipe{Ingredients: scaledIngredients}
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(scaledRecipe)
+}
+
+func parseScaleFactor(scale string) (float64, error) {
+    if scale == "" {
+        return 1.0, nil
+    }
+    return fmt.Sscanf(scale, "%f", &scale)
+}
+
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+    // Serve index.html file
+    tmpl := template.Must(template.ParseFiles("index.html"))
+    tmpl.Execute(w, nil)
+}
+
+func main() {
+    http.HandleFunc("/", IndexHandler)
+    http.HandleFunc("/scale", ScaleRecipe)
+    fmt.Println("Server listening on port 8080...")
+    http.ListenAndServe(":8080", nil)
+}

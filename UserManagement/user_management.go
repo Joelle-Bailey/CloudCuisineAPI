@@ -8,6 +8,9 @@ import (
 	"os"
 	"strconv"
 	"text/template"
+
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 // Recipe represents the JSON data structure
@@ -22,31 +25,39 @@ type Recipe struct {
 }
 
 func main() {
+	r := mux.NewRouter()
+
 	// Define a handler function for the homepage
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	})
 
 	// Define a handler function for serving static files (CSS)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	// Define a handler function for the recipe details page
-	http.HandleFunc("/recipe-details/", detailPageHandler)
+	r.HandleFunc("/recipe-details/", detailPageHandler)
 
 	// Define a handler function for the recipe book page
-	http.HandleFunc("/recipe-book/", recipeBookHandler)
+	r.HandleFunc("/recipe-book/", recipeBookHandler)
 
 	// Define a handler function for the pantry page
-	http.HandleFunc("/pantry/", pantryPageHandler)
+	r.HandleFunc("/pantry/", pantryPageHandler)
 
-	// Define a handler function for the recipe details page
-	http.HandleFunc("/api/search/", externalAPIHandler)
+	// Define a handler function for the external API search endpoint
+	r.HandleFunc("/api/search/", externalAPIHandler)
 
-	// Define a handler function for the recipe details page
-	http.HandleFunc("/api/get/", externalAPI_IDHandler)
+	// Define a handler function for the external API get endpoint
+	r.HandleFunc("/api/get/", externalAPI_IDHandler)
+
+	// Create a CORS handler
+	c := cors.AllowAll()
+
+	// Wrap your router with the CORS handler
+	handler := c.Handler(r)
 
 	// Start the web server
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", handler)
 }
 
 // detailPageHandler is responsible for rendering the recipe details page using a template

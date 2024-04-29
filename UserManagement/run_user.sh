@@ -11,7 +11,7 @@ docker rm -f "$DOCKER_CONTAINER_NAME"
 docker build -t "$DOCKER_IMAGE_NAME" .
 
 # Run Go Docker container
-docker run -d -p 8080:8080 --name "$DOCKER_CONTAINER_NAME" "$DOCKER_IMAGE_NAME"
+docker run -d -e SPOONACULAR_API_KEY=2cb224078c8346dc98e48581d25d0788 -p 8080:8080 --name "$DOCKER_CONTAINER_NAME" "$DOCKER_IMAGE_NAME"
 
 # Print endpoint
 echo "Go application endpoint: http://localhost:8080/"

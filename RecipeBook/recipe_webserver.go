@@ -242,11 +242,33 @@ func main() {
 	// Handle remove endpoint
 	mux.HandleFunc("/remove", db.remove)
 
+	// Add CORS middleware
+	handler := corsMiddleware(mux)
+
 	// Start HTTP server
-	log.Fatal(http.ListenAndServe(":8003", mux))
+	log.Fatal(http.ListenAndServe(":8003", handler))
 
 	// Disconnect from MongoDB
 	defer db.client.Disconnect(db.connect)
+}
+
+// CORS middleware function
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// If it's an OPTIONS request, just return without further processing
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
 }
 
 // checkError function checks for errors and logs them

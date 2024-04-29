@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/rs/cors"
 )
 
 // Recipe represents the JSON data structure
@@ -51,11 +53,19 @@ type Recipe struct {
 
 func main() {
 	mux := http.NewServeMux()
+
 	// Define a handler function for the test recipe endpoint
 	http.HandleFunc("/recipe", recipeHandler)
 	mux.Handle("/recipe", http.HandlerFunc(recipeHandler))
 
-	log.Fatal(http.ListenAndServe("localhost:8081", mux))
+	// Create a CORS handler
+	c := cors.AllowAll()
+
+	// Wrap your ServeMux with the CORS handler
+	handler := c.Handler(mux)
+
+	// Start the server
+	log.Fatal(http.ListenAndServe("localhost:8081", handler))
 }
 
 func recipeHandler(w http.ResponseWriter, r *http.Request) {
